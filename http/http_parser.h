@@ -316,7 +316,7 @@ struct http_parser {
   unsigned short http_major;
   unsigned short http_minor;
   unsigned int status_code : 16; /* responses only */
-  enum http_method method : 8;       /* requests only */
+  unsigned int method : 8;       /* requests only */
   unsigned int http_errno : 7;
 
   /* 1 = Upgrade header was present and the parser has exited because of that.
