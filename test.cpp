@@ -1,7 +1,7 @@
 #include "http/server.hpp"
 
 int main() {
-    http::server server{8080, 1};
+    http::server server{8080};
 
     server.get("/hello", [](const http::request &) -> http::task<http::response> {
         http::response res;
