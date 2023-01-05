@@ -26,6 +26,14 @@ int main() {
         co_return res;
     });
 
+    server.get("/.*\\.mp4", [](const http::request &req) -> http::task<http::response> {
+        http::response res;
+        res.status = http::status_type::ok;
+        res.headers.insert({"Content-Type", "video/mp4"});
+        res.content.emplace<std::filesystem::path>(std::string{R"(../public)"} + req.url);
+        co_return res;
+    });
+
     server.listen();
 
     return 0;

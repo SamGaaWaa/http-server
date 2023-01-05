@@ -8,8 +8,14 @@
 
 <body>
     <img src="zch.jpeg">
-    <img src="zy.jpeg" style="height: 600px;">
+    <img src="zy.jpeg" style="height: 600px;" controls>
     <iframe src="benchmark.html" style="width: 400px; height: 800px;"></iframe>
+    <iframe src="benchmark1.html" style="width: 400px; height: 800px;"></iframe>
+    <video width="320" height="240" controls>
+        <source src="girl.mp4" type="video/mp4">
+    </video>
+    <button onclick="document.getElementsByTagName('video')[0].play()">播放</button>
+
 </body>
 
 </html>
