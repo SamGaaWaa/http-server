@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/http-server.dir/test.cpp.o http/CMakeFiles/http.dir/src/connection.cpp.o http/CMakeFiles/http.dir/src/http_parser.c.o http/CMakeFiles/http.dir/src/io_context_pool.cpp.o http/CMakeFiles/http.dir/src/parser.cpp.o http/CMakeFiles/http.dir/src/server.cpp.o -o http-server  -luring 

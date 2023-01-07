@@ -1,0 +1,6 @@
+/home/sjh/open_source/http-server/build/CMakeFiles/http-server.dir
+/home/sjh/open_source/http-server/build/CMakeFiles/edit_cache.dir
+/home/sjh/open_source/http-server/build/CMakeFiles/rebuild_cache.dir
+/home/sjh/open_source/http-server/build/http/CMakeFiles/http.dir
+/home/sjh/open_source/http-server/build/http/CMakeFiles/edit_cache.dir
+/home/sjh/open_source/http-server/build/http/CMakeFiles/rebuild_cache.dir
