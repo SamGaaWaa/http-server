@@ -32,7 +32,7 @@ namespace http{
 
         timer.async_wait(timeout_handle);
         while (true){
-            auto [err, n] = co_await socket->async_read_some(asio::buffer((void*)buffer, size), use_awaitable);
+            auto [err, n] = co_await socket->async_read_some(asio::buffer((void*)buffer, size));
             if(err)
                 co_return std::nullopt;
 
