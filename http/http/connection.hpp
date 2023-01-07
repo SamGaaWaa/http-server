@@ -6,13 +6,13 @@
 #include "http/response.hpp"
 #include <optional>
 
-namespace http{
+namespace http {
 
-task<std::optional<request>> get_request(asio::ip::tcp::socket *, const char *, size_t);
+    task<std::optional<request>> get_request(tcp_socket*, const char*, size_t);
 
-task<response> handle_request(request);
+    task<response> handle_request(request);
 
-task<void> response_writer(asio::ip::tcp::socket *, response, const char*, size_t);
+    task<void> response_writer(tcp_socket*, response, const char*, size_t);
 
 }
 

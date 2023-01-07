@@ -19,7 +19,7 @@ namespace http{
     }
 
 
-    task<std::optional<request>> get_request(asio::ip::tcp::socket *socket, const char *buffer, size_t size){
+    task<std::optional<request>> get_request(tcp_socket *socket, const char *buffer, size_t size){
         parser p;
         asio::steady_timer timer{socket->get_executor()};
         timer.expires_after(std::chrono::seconds(10));
@@ -55,7 +55,7 @@ namespace http{
         co_return response{};
     }
 
-    task<void> response_writer(asio::ip::tcp::socket *socket, response res, const char* buffer, size_t size){
+    task<void> response_writer(tcp_socket *socket, response res, const char* buffer, size_t size){
         std::string resheaders = response::status_to_string(res.status);
         asio::steady_timer timer{socket->get_executor()};
 
@@ -79,7 +79,7 @@ namespace http{
         };
         timer.async_wait(timeout_handle);
 
-        auto&& ret = co_await socket->async_write_some(asio::buffer(resheaders), use_awaitable);
+        auto&& ret = co_await socket->async_write_some(asio::buffer(resheaders));
         if(std::get<0>(ret) || std::get<1>(ret) < resheaders.size())
             co_return;
 
@@ -88,20 +88,20 @@ namespace http{
         }else co_return;
 
         if(res.content.index() == 1){
-            co_await socket->async_write_some(asio::buffer(std::get<1>(res.content)), use_awaitable);
+            co_await socket->async_write_some(asio::buffer(std::get<1>(res.content)));
         }else{
             try{
-                asio::stream_file file{socket->get_executor(), std::get<2>(res.content).string(), boost::asio::file_base::read_only};
+                stream_file file{socket->get_executor(), std::get<2>(res.content).string(), boost::asio::file_base::read_only};
                 while(true){
-                    ret = co_await file.async_read_some(asio::buffer((void*)buffer, size), use_awaitable);
+                    ret = co_await file.async_read_some(asio::buffer((void*)buffer, size));
                     if(std::get<0>(ret))
                         co_return ;
 
                     if(std::get<1>(ret) < size){
-                        co_await socket->async_write_some(asio::buffer((void*)buffer, std::get<1>(ret)), use_awaitable);
+                        co_await socket->async_write_some(asio::buffer((void*)buffer, std::get<1>(ret)));
                         co_return;
                     }
-                    ret = co_await socket->async_write_some(asio::buffer((void*)buffer, size), use_awaitable);
+                    ret = co_await socket->async_write_some(asio::buffer((void*)buffer, size));
                     if(std::get<0>(ret))
                         co_return;
                     if(std::get<1>(ret) < size)
