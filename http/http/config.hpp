@@ -1,11 +1,11 @@
 #ifndef MEDIASERVER_CONFIG_HPP
 #define MEDIASERVER_CONFIG_HPP
 
-#define __cpp_lib_coroutine
+// #define __cpp_lib_coroutine
 #define BOOST_ASIO_HAS_CO_AWAIT
 #define _WIN32_WINNT 0x0601
 #include <coroutine>
-#undef __cpp_lib_coroutine
+// #undef __cpp_lib_coroutine
 
 #ifdef __linux__
 #define BOOST_ASIO_HAS_IO_URING

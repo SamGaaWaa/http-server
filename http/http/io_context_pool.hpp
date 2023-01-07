@@ -6,11 +6,12 @@
 #include <thread>
 #include <memory>
 #include <atomic>
-#include "config.hpp"
+#include "http/config.hpp"
 
 namespace http {
 
     class io_context_pool: asio::noncopyable {
+        public:
         using executor_work_guard = asio::executor_work_guard<asio::io_context::executor_type>;
 
         io_context_pool(size_t ths);

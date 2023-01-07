@@ -1,6 +1,6 @@
 #include "http/io_context_pool.hpp"
 
-namespace {
+namespace http {
 
     io_context_pool::io_context_pool(size_t ths) {
         for (auto i{ 0 }; i < ths; ++i) {
@@ -10,7 +10,7 @@ namespace {
 
     void io_context_pool::start() {
         for (auto& context : _contexts) {
-            _guards.emplace_back(asio::make_work_guard(context));
+            _guards.push_back(asio::make_work_guard(*context));
             _threads.emplace_back([&context] {
                 context->run();
                 });

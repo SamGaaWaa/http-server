@@ -8,7 +8,7 @@ target_include_directories(http PUBLIC ./)
 
 if(CMAKE_HOST_UNIX)
     if(CMAKE_COMPILER_IS_GNUCXX)
-        set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -luring")
+        set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -luring -pthread")
         target_include_directories(http PUBLIC /usr/include/)
         target_link_libraries(http uring)
     endif()
