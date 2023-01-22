@@ -14,7 +14,7 @@ int main() {
         http::response res;
         res.status = http::status_type::ok;
         res.headers.insert({ "Content-Type", "text/html" });
-        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + req.url);
+        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + std::string{req.url});
         co_return res;
     });
 
@@ -22,7 +22,7 @@ int main() {
         http::response res;
         res.status = http::status_type::ok;
         res.headers.insert({ "Content-Type", "image/jpeg" });
-        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + req.url);
+        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + std::string{req.url});
         co_return res;
     });
 
@@ -30,7 +30,7 @@ int main() {
         http::response res;
         res.status = http::status_type::ok;
         res.headers.insert({ "Content-Type", "video/mp4" });
-        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + req.url);
+        res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + std::string{req.url});
         co_return res;
     });
 
@@ -55,6 +55,34 @@ int main() {
             res.content.emplace<std::string>("Invalid argument.");
         }
         co_return res;
+    });
+
+    server.websocket("/echo", [ ](http::ws_stream stream)->http::task<void> {
+        while (true) {
+            std::string msg;
+            boost::asio::dynamic_string_buffer buffer{ msg, 1 << 16 };
+            auto ret = co_await stream.async_read(buffer);
+            if (std::get<0>(ret))
+                co_return;
+            stream.send(std::make_shared<std::string>(std::move(msg)));
+        }
+    });
+
+    //subscribe-publish
+    server.websocket("/chat-room", [ ](http::ws_stream stream)->http::task<void> {
+        stream.join("chat"); //join in a room named "chat"
+        while (true) {
+            auto msg = std::make_shared<std::string>();
+            msg->reserve(128);
+            boost::asio::dynamic_string_buffer buffer{ *msg, 1 << 16 };
+            auto ret = co_await stream.async_read(buffer);
+            if(std::get<0>(ret))
+                co_return;     //automatic call stream.leave() to leave room
+            /*
+             *  deal with message
+             */
+            stream.room().publish(msg);
+        }
     });
 
     server.listen();

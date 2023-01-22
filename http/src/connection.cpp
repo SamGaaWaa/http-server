@@ -7,7 +7,7 @@
 
 namespace http{
 
-    auto timeout_ctl(asio::steady_timer &timer, size_t bytes){
+    static auto timeout_ctl(asio::steady_timer &timer, size_t bytes){
         auto now = std::chrono::steady_clock::now();
         auto begin = timer.expiry() - std::chrono::seconds{10};
         auto time = std::chrono::duration_cast<std::chrono::milliseconds>(now - begin).count() ;
@@ -59,10 +59,10 @@ namespace http{
         std::string resheaders = response::status_to_string(res.status);
         asio::steady_timer timer{socket->get_executor()};
 
-        if(res.content.index() == 1){
-            res.headers["Content-Length"] = std::to_string(std::get<std::string>(res.content).size());
-        }else{
-        }
+//        if(res.content.index() == 1){
+//            res.headers["Content-Length"] = std::to_string(std::get<std::string>(res.content).size());
+//        }else{
+//        }
         for(const auto& [k, v]: res.headers){
             resheaders.append(k);
             resheaders.append(": ");
