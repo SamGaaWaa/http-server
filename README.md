@@ -1,16 +1,24 @@
 # http-server
-基于asio的高性能http服务器，支持Windows和Linux(5.22+)
+基于asio的高性能http/websocket服务器，支持Windows和Linux(5.22+)
 -
 
 - 接口简单易用
 ```C++
     #include "http/server.hpp"
-    http::server server{8080};
+    http::server server{8080, 8}; //8 threads
 
-    server.get("/hello", [](const http::request &) -> http::task<http::response> {
+    server.get("/hello", [](const http::request &) {
         http::response res;
         res.status = http::status_type::ok; //200
         res.content.emplace<std::string>("<h1>Hello world!</h1>");
+        return res;
+    });
+
+    //协程作为回调函数
+    server.get("/login", [](const http::request &req) -> http::task<http::response>{//C++标准要求，协程必须显式指定返回类型。
+        http::response res;
+        auto session = co_await /*数据库操作*/
+        ...
         co_return res;
     });
 
@@ -22,6 +30,36 @@
         res.content.emplace<std::filesystem::path>(std::string{R"(../public)"} + req.url);
         co_return res;
     });
+
+    //websocket
+    server.websocket("/echo", [ ](http::ws_stream stream)->http::task<void> {
+        while (true) {
+            std::string msg;
+            boost::asio::dynamic_string_buffer buffer{ msg, 1 << 16 };
+            std::tuple<boost::system::error_code> ret = co_await stream.async_read(buffer);
+            if (std::get<0>(ret))
+                co_return;
+            stream.send(std::make_shared<std::string>(std::move(msg))); 
+        }
+    });
+
+    //subscribe-publish
+    server.websocket("/chat-room", [ ](http::ws_stream stream)->http::task<void> {
+        stream.join("chat"); //join in a room named "chat"
+        while (true) {
+            auto msg = std::make_shared<std::string>();
+            msg->reserve(128);
+            boost::asio::dynamic_string_buffer buffer{ *msg, 1 << 16 };
+            auto ret = co_await stream.async_read(buffer);
+            if(std::get<0>(ret))
+                co_return;     //automatic call stream.leave() to leave room
+            /*
+             *  deal with message
+             */
+            stream.room().publish(msg);
+        }
+    });
+
 
     server.listen();
 ```

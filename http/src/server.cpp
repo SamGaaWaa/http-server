@@ -2,10 +2,29 @@
 #include "http/connection.hpp"
 #include <array>
 #include <algorithm>
-#include <iostream>
+#include <regex>
 
 namespace http {
     constexpr size_t http_buffer_size = 1 << 16; //64KB
+
+    static auto pattern(const std::string & str) {
+        return [re = std::regex{ str }](const std::string_view & s) {
+            return std::regex_match(s.begin(), s.end(), re);
+        };
+    }
+
+    template<class Func, class Token = default_token>
+    static auto async_post(asio::io_context& executor, Func&& func, Token token = {}){
+        auto init = [func = std::forward<Func>(func), &executor]<typename Handler>(Handler&& handler)mutable{
+            asio::post(executor, [func = std::move(func), handler = std::forward<Handler>(handler)]()mutable{
+                auto ex = asio::get_associated_executor(handler);
+                asio::dispatch(ex, [res = func(), handler = std::move(handler)]()mutable{
+                    handler(std::move(res));
+                });
+            });
+        };
+        return asio::async_initiate<Token, void(response&&)>(init, token);
+    }
 
     server::server(short port, size_t ths) :
             _acceptor{_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)},
@@ -14,11 +33,19 @@ namespace http {
 
     }
 
-    void server::get(const std::string &path, handle_type &&handle) {
+    void server::get(const std::string &path, async_handle &&handle) {
         _matchers.emplace_back(pattern(path), request::Method::GET, std::make_unique<handle_type>(std::move(handle)));
     }
 
-    void server::post(const std::string &path, handle_type &&handle) {
+    void server::get(const std::string &path, sync_handle &&handle) {
+        _matchers.emplace_back(pattern(path), request::Method::GET, std::make_unique<handle_type>(std::move(handle)));
+    }
+
+    void server::post(const std::string &path, async_handle &&handle) {
+        _matchers.emplace_back(pattern(path), request::Method::POST, std::make_unique<handle_type>(std::move(handle)));
+    }
+
+    void server::post(const std::string &path, sync_handle &&handle) {
         _matchers.emplace_back(pattern(path), request::Method::POST, std::make_unique<handle_type>(std::move(handle)));
     }
 
@@ -89,8 +116,19 @@ namespace http {
         auto handle = route(*req_op);
         if (handle == nullptr)
             co_return;
+
         if (_ths > 1) {
-            auto ret = co_await asio::co_spawn(*_pool.get_executor(), (*handle)(*req_op), default_token{});
+            if(handle->index() == 0){
+                auto res_tp = co_await async_post(*_pool.get_executor(), [handle, &req_op](){
+                    return std::get<0>(*handle)(*req_op);
+                });
+                if(std::get<0>(res_tp).status == status_type::ok){
+                    _map.insert({std::tuple{req_op->url, req_op->method}, handle});
+                }
+                co_await response_writer(&socket, std::move(std::get<0>(res_tp)), buffer.data(), buffer.size());
+                co_return;
+            }
+            auto ret = co_await asio::co_spawn(*_pool.get_executor(), std::get<1>(*handle)(*req_op), default_token{});
             if (std::get<0>(ret))
                 co_return;
             if (std::get<1>(ret).status == status_type::ok)
@@ -98,20 +136,18 @@ namespace http {
             co_await response_writer(&socket, std::move(std::get<1>(ret)), buffer.data(), buffer.size());
         } else {
             try {
-                auto res = co_await (*handle)(*req_op);
-                if (res.status == status_type::ok)
+                std::optional<response> res_op;
+                if(handle->index() == 0){
+                    res_op = std::get<0>(*handle)(*req_op);
+                }else res_op = co_await (std::get<1>(*handle))(*req_op);
+                if ((*res_op).status == status_type::ok)
                     _map.insert({std::tuple{req_op->url, req_op->method}, handle});
-                co_await response_writer(&socket, std::move(res), buffer.data(), buffer.size());
+                co_await response_writer(&socket, std::move(*res_op), buffer.data(), buffer.size());
             }
             catch (...) {
                 co_return;
             }
         }
-    }
-
-    task<void> server::_handle_websocket(tcp_socket socket, request req) {
-        std::cout<<req.url<<'\n';
-        co_return;
     }
 
 }

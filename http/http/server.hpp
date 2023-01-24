@@ -7,7 +7,6 @@
 #include "http/request.hpp"
 #include "http/io_context_pool.hpp"
 #include "http/stream.hpp"
-#include "http/room.hpp"
 
 #include <functional>
 #include <string>
@@ -15,28 +14,26 @@
 #include <vector>
 #include <deque>
 #include <optional>
-#include <regex>
 #include <shared_mutex>
 #include <thread>
+#include <variant>
 
 namespace http {
 
-    static inline auto pattern(const std::string & str) {
-        return [re = std::regex{ str }](const std::string_view & s) {
-            return std::regex_match(s.begin(), s.end(), re);
-        };
-    }
-
     class server {
         public:
-        using handle_type = std::function<task<response>(const request&)>;
+        using sync_handle = std::function<response(const request&)>;
+        using async_handle = std::function<task<response>(const request&)>;
+        using handle_type = std::variant<sync_handle, async_handle>;
         using handle_ptr = std::unique_ptr<handle_type>;
         using websocket_handle = std::function<task<void>(ws_stream)>;
 
         server(short port = 80, size_t ths = 1);
 
-        void get(const std::string&, handle_type&&);
-        void post(const std::string&, handle_type&&);
+        void get(const std::string&, async_handle&&);
+        void get(const std::string&, sync_handle&&);
+        void post(const std::string&, async_handle&&);
+        void post(const std::string&, sync_handle&&);
         void websocket(std::string_view, websocket_handle&&);
         void listen();
         asio::io_context& get_executor();
@@ -50,7 +47,6 @@ namespace http {
         using websocket_map = std::vector<websocket_pair>;
 
         task<void> _handle_connection(tcp_socket);
-        task<void> _handle_websocket(tcp_socket, request);
 
         handle_type* route(const request&);
         route_map _map;

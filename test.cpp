@@ -1,4 +1,5 @@
 #include "http/server.hpp"
+#include "http/room.hpp"
 
 int main() {
     http::server server{ 8080, 8 }; //8 threads
@@ -18,12 +19,12 @@ int main() {
         co_return res;
     });
 
-    server.get("/.*\\.jpeg", [ ](const http::request& req) -> http::task<http::response> {
+    server.get("/.*\\.jpeg", [ ](const http::request& req){
         http::response res;
         res.status = http::status_type::ok;
         res.headers.insert({ "Content-Type", "image/jpeg" });
         res.content.emplace<std::filesystem::path>(std::string{ R"(../public)" } + std::string{req.url});
-        co_return res;
+        return res;
     });
 
     server.get("/.*\\.mp4", [ ](const http::request& req) -> http::task<http::response> {
@@ -35,7 +36,7 @@ int main() {
     });
 
     //Simulate CPU-intensive request. For exemple, /fib28.
-    server.get("/fib.*", [ ](const http::request& req) -> http::task<http::response> {
+    server.get("/fib.*", [ ](const http::request& req){
         http::response res;
         struct cal {
             unsigned long long fib(int x) {
@@ -54,7 +55,7 @@ int main() {
         catch (...) {
             res.content.emplace<std::string>("Invalid argument.");
         }
-        co_return res;
+        return res;
     });
 
     server.websocket("/echo", [ ](http::ws_stream stream)->http::task<void> {
