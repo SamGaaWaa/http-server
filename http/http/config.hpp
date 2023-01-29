@@ -6,10 +6,17 @@
 #include <coroutine>
 
 #ifdef __linux__
+#include "linux/version.h"
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5, 10, 0)
 #define BOOST_ASIO_HAS_IO_URING
-#define BOOST_ASIO_DISABLE_EPOLL
+// #define BOOST_ASIO_DISABLE_EPOLL
 #include "liburing.h"
+#else
+#define USE_THREAD_POOL
 #endif
+
+#endif //__linux__
 
 #include "boost/asio.hpp"
 
@@ -24,7 +31,6 @@ namespace http {
     using default_token = asio::as_tuple_t<asio::use_awaitable_t<>>;
     using tcp_socket = default_token::as_default_on_t<asio::ip::tcp::socket>;
     using tcp_acceptor = default_token::as_default_on_t<asio::ip::tcp::acceptor>;
-    using stream_file = default_token::as_default_on_t<asio::stream_file>;
 
 }
 
