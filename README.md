@@ -1,5 +1,5 @@
 # http-server
-基于asio的高性能http/websocket服务器，支持Windows和Linux(5.22+)
+基于asio的高性能http/websocket服务器，支持Windows和Linux
 -
 
 - 接口简单易用
@@ -64,7 +64,7 @@
     server.listen();
 ```
 
-- 高性能：使用 __IOCP__ 或 __io_uring__，小文件传输 __1万 QPS__，速率 __1.2__ __GB__ /s，大文件传输速率高达 __1.3__ __GB__ /s
+- 高性能：使用 __IOCP__ 或 __io_uring__，小文件传输 __1万 QPS__，速率 __1.2__ __GB__ /s，大文件传输速率高达 __2__ __GB__ /s
 
 <table>
     <tr>
@@ -148,92 +148,31 @@
     </tr>
 </table>
 
-<table>
-    <tr>
-        <th colspan=2 bgcolor=white>Server Software:</th>
-        <td colspan=2 bgcolor=white></td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Server Hostname:</th>
-        <td colspan=2 bgcolor=white>127.0.0.1</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Server Port:</th>
-        <td colspan=2 bgcolor=white>8080</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Document Path:</th>
-        <td colspan=2 bgcolor=white>/girl.mp4</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Document Length:</th>
-        <td colspan=2 bgcolor=white>11165483 bytes</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Concurrency Level:</th>
-        <td colspan=2 bgcolor=white>10</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Time taken for tests:</th>
-        <td colspan=2 bgcolor=white>80.413 seconds</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Complete requests:</th>
-        <td colspan=2 bgcolor=white>10000</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Failed requests:</th>
-        <td colspan=2 bgcolor=white>0</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Total transferred:</th>
-        <td colspan=2 bgcolor=white>111655270000 bytes</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>HTML transferred:</th>
-        <td colspan=2 bgcolor=white>111654830000 bytes</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Requests per second:</th>
-        <td colspan=2 bgcolor=white>124.36</td>
-    </tr>
-    <tr>
-        <th colspan=2 bgcolor=white>Transfer rate:</th>
-        <td colspan=2 bgcolor=white>1355984.25 kB/s received</td>
-    </tr>
-    <tr>
-        <th bgcolor=white colspan=4>Connection Times (ms)</th>
-    </tr>
-    <tr>
-        <th bgcolor=white>&nbsp;</th>
-        <th bgcolor=white>min</th>
-        <th bgcolor=white>avg</th>
-        <th bgcolor=white>max</th>
-    </tr>
-    <tr>
-        <th bgcolor=white>Connect:</th>
-        <td bgcolor=white> 0</td>
-        <td bgcolor=white> 0</td>
-        <td bgcolor=white> 2</td>
-    </tr>
-    <tr>
-        <th bgcolor=white>Processing:</th>
-        <td bgcolor=white> 56</td>
-        <td bgcolor=white> 80</td>
-        <td bgcolor=white> 136</td>
-    </tr>
-    <tr>
-        <th bgcolor=white>Total:</th>
-        <td bgcolor=white> 56</td>
-        <td bgcolor=white> 80</td>
-        <td bgcolor=white> 138</td>
-    </tr>
+<table >
+<tr ><th colspan=2 bgcolor=white>Server Software:</th><td colspan=2 bgcolor=white></td></tr>
+<tr ><th colspan=2 bgcolor=white>Server Hostname:</th><td colspan=2 bgcolor=white>127.0.0.1</td></tr>
+<tr ><th colspan=2 bgcolor=white>Server Port:</th><td colspan=2 bgcolor=white>8080</td></tr>
+<tr ><th colspan=2 bgcolor=white>Document Path:</th><td colspan=2 bgcolor=white>/girl.mp4</td></tr>
+<tr ><th colspan=2 bgcolor=white>Document Length:</th><td colspan=2 bgcolor=white>11165483 bytes</td></tr>
+<tr ><th colspan=2 bgcolor=white>Concurrency Level:</th><td colspan=2 bgcolor=white>10</td></tr>
+<tr ><th colspan=2 bgcolor=white>Time taken for tests:</th><td colspan=2 bgcolor=white>4.964 seconds</td></tr>
+<tr ><th colspan=2 bgcolor=white>Complete requests:</th><td colspan=2 bgcolor=white>1000</td></tr>
+<tr ><th colspan=2 bgcolor=white>Failed requests:</th><td colspan=2 bgcolor=white>0</td></tr>
+<tr ><th colspan=2 bgcolor=white>Total transferred:</th><td colspan=2 bgcolor=white>11165527000 bytes</td></tr>
+<tr ><th colspan=2 bgcolor=white>HTML transferred:</th><td colspan=2 bgcolor=white>11165483000 bytes</td></tr>
+<tr ><th colspan=2 bgcolor=white>Requests per second:</th><td colspan=2 bgcolor=white>201.44</td></tr>
+<tr ><th colspan=2 bgcolor=white>Transfer rate:</th><td colspan=2 bgcolor=white>2196434.60 kB/s received</td></tr>
+<tr ><th bgcolor=white colspan=4>Connection Times (ms)</th></tr>
+<tr ><th bgcolor=white>&nbsp;</th> <th bgcolor=white>min</th>   <th bgcolor=white>avg</th>   <th bgcolor=white>max</th></tr>
+<tr ><th bgcolor=white>Connect:</th><td bgcolor=white>    0</td><td bgcolor=white>    0</td><td bgcolor=white>    2</td></tr>
+<tr ><th bgcolor=white>Processing:</th><td bgcolor=white>   42</td><td bgcolor=white>   49</td><td bgcolor=white>   66</td></tr>
+<tr ><th bgcolor=white>Total:</th><td bgcolor=white>   42</td><td bgcolor=white>   49</td><td bgcolor=white>   68</td></tr>
 </table>
 
 ---
 Build
 -
-Linux 下依赖liburing，内核版本5.22以上
+Linux 下依赖liburing，内核版本5.15以上, 低于5.15使用epoll和线程池（文件IO）
 ```shell
 git clone https://github.com/axboe/liburing.git
 cd liburing

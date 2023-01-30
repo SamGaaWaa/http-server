@@ -8,9 +8,9 @@
 #ifdef __linux__
 #include "linux/version.h"
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(5, 10, 0)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(5, 15, 0)
 #define BOOST_ASIO_HAS_IO_URING
-// #define BOOST_ASIO_DISABLE_EPOLL
+#define BOOST_ASIO_DISABLE_EPOLL
 #include "liburing.h"
 #else
 #define USE_THREAD_POOL
