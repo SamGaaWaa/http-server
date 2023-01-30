@@ -197,7 +197,7 @@ target_link_libraries(yourproject http)
 ```shell
 mkdir build
 cd build
-cmake .. 
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 ./http-server
 ```
