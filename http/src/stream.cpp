@@ -15,7 +15,7 @@ namespace http{
     }
 
     void ws_stream::send(const std::shared_ptr<std::string> &msg) {
-        // asio::post(_stream.get_executor(), [this, msg = std::shared_ptr<std::string>{msg}]()mutable{
+         asio::post(_stream.get_executor(), [this, msg = std::shared_ptr<std::string>{msg}]()mutable{
             _q.emplace_back(std::move(msg));
             if(_q.size() > 1)
                 return;
@@ -25,7 +25,7 @@ namespace http{
                     _q.pop_front();
                 }
             }, asio::detached);
-        // });
+        });
     }
 
     void ws_stream::join(http::room &r) {
