@@ -1,7 +1,9 @@
 #include "http/stream.hpp"
 #include "http/room.hpp"
-#include <iostream>
-#include <algorithm>
+
+#define _WIN32_WINNT 0x0601
+#include "boost/asio/co_spawn.hpp"
+#include "boost/asio/detached.hpp"
 
 namespace http{
 
@@ -15,16 +17,16 @@ namespace http{
     }
 
     void ws_stream::send(const std::shared_ptr<std::string> &msg) {
-         asio::post(_stream.get_executor(), [this, msg = std::shared_ptr<std::string>{msg}]()mutable{
+        asio::post(_stream.get_executor(), [this, msg = std::shared_ptr<std::string>{msg}]()mutable{
             _q.emplace_back(std::move(msg));
             if(_q.size() > 1)
                 return;
-            asio::co_spawn(_stream.get_executor(), [this]()->task<void>{
+            boost::asio::co_spawn(_stream.get_executor(), [this]()->task<void>{
                 while(!_q.empty()){
                     co_await _stream.async_write(asio::buffer(*_q.front()));
                     _q.pop_front();
                 }
-            }, asio::detached);
+            }, boost::asio::detached);
         });
     }
 

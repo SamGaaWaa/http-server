@@ -1,5 +1,5 @@
-#ifndef MEDIASERVER_REQUEST_HPP
-#define MEDIASERVER_REQUEST_HPP
+#ifndef HTTP_REQUEST_HPP
+#define HTTP_REQUEST_HPP
 
 #include <string>
 #include <string_view>
@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <optional>
 #include <cstring>
-//#include "boost/container/flat_map.hpp"
-
 
 namespace http{
     struct request{
@@ -27,11 +25,11 @@ namespace http{
         std::string_view url;
         std::string_view body;
 
-        std::optional<std::string_view> find_header(const std::string&)const;
-        std::optional<std::string_view> find_header(const std::string_view&)const noexcept;
+        [[nodiscard]] std::optional<std::string_view> find_header(const std::string&)const;
+        [[nodiscard]] std::optional<std::string_view> find_header(const std::string_view&)const noexcept;
         std::optional<std::string_view> find_header(const char*)const noexcept;
 
-        const char *data()const noexcept;
+        [[nodiscard]] const char *data()const noexcept;
         size_t size()const noexcept;
         bool is_upgrade()const noexcept;
     private:
@@ -44,4 +42,4 @@ namespace http{
     };
 }
 
-#endif //MEDIASERVER_REQUEST_HPP
+#endif //HTTP_REQUEST_HPP

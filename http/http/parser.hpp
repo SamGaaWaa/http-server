@@ -1,5 +1,5 @@
-#ifndef MEDIASERVER_PARSER_HPP
-#define MEDIASERVER_PARSER_HPP
+#ifndef HTTP_PARSER_HPP
+#define HTTP_PARSER_HPP
 
 #include "http_parser.h"
 #include "http/request.hpp"
@@ -11,7 +11,7 @@ namespace http{
         parser()noexcept;
         int parse(const char *, size_t);
         request result()noexcept;
-        bool finish()const noexcept;
+        [[nodiscard]] bool finish()const noexcept;
     private:
         http_parser _parser{};
         request _req;
@@ -133,4 +133,4 @@ namespace http{
 
 }
 
-#endif //MEDIASERVER_PARSER_HPP
+#endif //HTTP_PARSER_HPP

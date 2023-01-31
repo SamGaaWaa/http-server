@@ -1,5 +1,7 @@
 #include "http/server.hpp"
 #include "http/parser.hpp"
+#include "boost/asio/co_spawn.hpp"
+#include "boost/asio/detached.hpp"
 #include <array>
 #include <algorithm>
 #include <regex>
@@ -8,8 +10,9 @@
 #ifdef USE_THREAD_POOL
 #include "http/file.hpp"
 #else
+#include "boost/asio/stream_file.hpp"
 namespace http{
-    using stream_file = default_token::as_default_on_t<asio::stream_file>;
+    using stream_file = default_token::as_default_on_t<boost::asio::stream_file>;
     using file_base = boost::asio::file_base;
 }
 #endif
@@ -109,7 +112,7 @@ namespace http {
                 try {
 #ifdef USE_THREAD_POOL
                     stream_file file{ std::get<2>(res.content).string(), file_base::read_only };
-#else 
+#else
                     stream_file file{ ex, std::get<2>(res.content).string(), file_base::read_only };
 
 #endif

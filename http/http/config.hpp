@@ -1,5 +1,5 @@
-#ifndef MEDIASERVER_CONFIG_HPP
-#define MEDIASERVER_CONFIG_HPP
+#ifndef HTTP_CONFIG_HPP
+#define HTTP_CONFIG_HPP
 
 #define BOOST_ASIO_HAS_CO_AWAIT
 #define _WIN32_WINNT 0x0601
@@ -18,7 +18,10 @@
 
 #endif //__linux__
 
-#include "boost/asio.hpp"
+#include <boost/asio/awaitable.hpp>
+#include <boost/asio/as_tuple.hpp>
+#include <boost/asio/use_awaitable.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 
 namespace http {
@@ -26,21 +29,10 @@ namespace http {
     namespace asio = boost::asio;
     template<class T> using task = boost::asio::awaitable<T>;
 
-    constexpr auto use_awaitable = asio::as_tuple(asio::use_awaitable);
-
     using default_token = asio::as_tuple_t<asio::use_awaitable_t<>>;
     using tcp_socket = default_token::as_default_on_t<asio::ip::tcp::socket>;
     using tcp_acceptor = default_token::as_default_on_t<asio::ip::tcp::acceptor>;
 
 }
 
-#include "boost/beast.hpp"
-
-namespace http{
-    namespace beast = boost::beast;
-    namespace websocket = beast::websocket;
-//    using ws_stream = beast::websocket::stream<typename beast::tcp_stream::rebind_executor<typename default_token::executor_with_default<asio::any_io_executor>>::other>;
-//    using wss_stream = beast::websocket::stream<beast::ssl_stream<http::tcp_socket>>;
-}
-
-#endif //MEDIASERVER_CONFIG_HPP
+#endif //HTTP_CONFIG_HPP

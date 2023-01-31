@@ -1,7 +1,10 @@
-#ifndef AVSERVER_STREAM_FILE_HPP
-#define AVSERVER_STREAM_FILE_HPP
+#ifndef HTTP_STREAM_FILE_HPP
+#define HTTP_STREAM_FILE_HPP
 
 #include "http/config.hpp"
+
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 #include <string>
 #include "stdio.h"
@@ -24,8 +27,8 @@ namespace http{
         explicit stream_file(const std::string&, file_base::flags);
         stream_file(const stream_file&)=delete;
         stream_file& operator=(const stream_file&)=delete;
-        stream_file(stream_file&&)=default;
-        stream_file& operator=(stream_file&&)=default;
+        stream_file(stream_file&&)noexcept;
+        stream_file& operator=(stream_file&&)noexcept;
         ~stream_file();
 
     public:
@@ -81,4 +84,4 @@ namespace http{
 
 }
 
-#endif //AVSERVER_STREAM_FILE_HPP
+#endif //HTTP_STREAM_FILE_HPP

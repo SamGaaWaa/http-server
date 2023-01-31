@@ -1,5 +1,5 @@
-#ifndef AVSERVER_IO_CONTEXT_POOL_HPP
-#define AVSERVER_IO_CONTEXT_POOL_HPP
+#ifndef HTTP_IO_CONTEXT_POOL_HPP
+#define HTTP_IO_CONTEXT_POOL_HPP
 
 #include <vector>
 #include <list>
@@ -14,7 +14,7 @@ namespace http {
         public:
         using executor_work_guard = asio::executor_work_guard<asio::io_context::executor_type>;
 
-        io_context_pool(size_t ths);
+        explicit io_context_pool(size_t ths);
         void start();
         void stop();
         asio::io_context* get_executor()noexcept;
@@ -30,4 +30,4 @@ namespace http {
 }
 
 
-#endif //AVSERVER_IO_CONTEXT_POOL_HPP
+#endif //HTTP_IO_CONTEXT_POOL_HPP

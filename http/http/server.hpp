@@ -1,5 +1,5 @@
-#ifndef MEDIASERVER_SERVER_HPP
-#define MEDIASERVER_SERVER_HPP
+#ifndef HTTP_SERVER_HPP
+#define HTTP_SERVER_HPP
 
 #include "boost/container/flat_map.hpp"
 #include "http/config.hpp"
@@ -7,6 +7,7 @@
 #include "http/request.hpp"
 #include "http/io_context_pool.hpp"
 #include "http/stream.hpp"
+#include "http/room.hpp"
 
 #include <functional>
 #include <string>
@@ -21,7 +22,7 @@
 namespace http {
 
     class server {
-        public:
+    public:
         using sync_handle = std::function<response(const request&)>;
         using async_handle = std::function<task<response>(const request&)>;
         using handle_type = std::variant<sync_handle, async_handle>;
@@ -29,7 +30,7 @@ namespace http {
         using websocket_handle = std::function<task<void>(ws_stream)>;
         using route_map = boost::container::flat_map<std::tuple<std::string_view, request::Method>, handle_type*>;
 
-        server(short port = 80, size_t ths = 1);
+        explicit server(short port = 80, size_t ths = 1);
 
         void get(const std::string&, async_handle&&);
         void get(const std::string&, sync_handle&&);
@@ -39,7 +40,7 @@ namespace http {
         void listen();
         asio::io_context& get_executor();
 
-        private:
+    private:
         friend class ws_stream;
         using matcher = std::function<bool(const std::string_view&)>;
         using matcher_pair = std::tuple<matcher, request::Method, handle_ptr>;
@@ -61,4 +62,4 @@ namespace http {
 
 }
 
-#endif //MEDIASERVER_SERVER_HPP
+#endif //HTTP_SERVER_HPP

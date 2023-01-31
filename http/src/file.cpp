@@ -26,8 +26,19 @@ namespace http{
             throw std::runtime_error{"File open error: "};
     }
 
+    stream_file::stream_file(stream_file&& other)noexcept:_file{other._file}{
+        other._file = nullptr;
+    }
+
+    stream_file &stream_file::operator=(stream_file&& other)noexcept{
+        _file = other._file;
+        other._file = nullptr;
+        return *this;
+    }
+
     stream_file::~stream_file() {
-        ::fclose(_file);
+        if(_file)
+            ::fclose(_file);
     }
 
 

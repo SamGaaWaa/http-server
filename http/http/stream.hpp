@@ -1,10 +1,13 @@
-#ifndef AVSERVER_STREAM_HPP
-#define AVSERVER_STREAM_HPP
+#ifndef HTTP_STREAM_HPP
+#define HTTP_STREAM_HPP
 
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
-
 #include "http/config.hpp"
+#include "boost/beast/websocket.hpp"
+#include "boost/beast/core/tcp_stream.hpp"
+#include <boost/asio/dispatch.hpp>
+
 #include <string>
 #include <memory>
 #include <deque>
@@ -12,9 +15,13 @@
 
 namespace http {
     class room;
+
+    namespace websocket = boost::beast::websocket;
+    using ws_stream_t = boost::beast::websocket::stream<typename boost::beast::tcp_stream::rebind_executor<typename default_token::executor_with_default<asio::any_io_executor>>::other>;
+
     class ws_stream {
     public:
-        using ws_stream_t = beast::websocket::stream<typename beast::tcp_stream::rebind_executor<typename default_token::executor_with_default<asio::any_io_executor>>::other>;
+        using ws_stream_t = boost::beast::websocket::stream<typename boost::beast::tcp_stream::rebind_executor<typename default_token::executor_with_default<asio::any_io_executor>>::other>;
 
         explicit ws_stream(ws_stream_t) noexcept;
         ws_stream(const ws_stream&)=delete;
@@ -37,7 +44,7 @@ namespace http {
             auto initiate = [this, &buffer]<typename Handler>(Handler&& handler)mutable {
                 _stream.async_read(buffer, [handler=std::move(handler)](boost::system::error_code err, size_t)mutable{
                     auto ex = asio::get_associated_executor(handler);
-                    asio::dispatch(ex, [err, handler=std::move(handler)]()mutable {
+                    boost::asio::dispatch(ex, [err, handler=std::move(handler)]()mutable {
                         handler(err);
                     });
                 });
@@ -59,4 +66,4 @@ namespace http {
     };
 }
 
-#endif //AVSERVER_STREAM_HPP
+#endif //HTTP_STREAM_HPP

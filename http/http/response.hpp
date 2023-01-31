@@ -1,5 +1,5 @@
-#ifndef MEDIASERVER_RESPONSE_HPP
-#define MEDIASERVER_RESPONSE_HPP
+#ifndef HTTP_RESPONSE_HPP
+#define HTTP_RESPONSE_HPP
 
 #include <string>
 #include <variant>
@@ -110,4 +110,4 @@ namespace http {
     };
 }
 
-#endif //MEDIASERVER_RESPONSE_HPP
+#endif //HTTP_RESPONSE_HPP

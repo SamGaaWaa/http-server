@@ -1,5 +1,5 @@
-#ifndef AVSERVER_ROUTER_HPP
-#define AVSERVER_ROUTER_HPP
+#ifndef HTTP_ROUTER_HPP
+#define HTTP_ROUTER_HPP
 
 #include "boost/container/flat_set.hpp"
 #include "boost/intrusive/avl_set.hpp"
@@ -58,4 +58,4 @@ namespace http {
 
 }
 
-#endif //AVSERVER_ROUTER_HPP
+#endif //HTTP_ROUTER_HPP
