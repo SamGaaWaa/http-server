@@ -8,37 +8,37 @@
 
 namespace http {
     namespace status_strings {
-        const std::string ok =
+        inline const char* ok =
                 "HTTP/1.0 200 OK\r\n";
-        const std::string created =
+        inline const char* created =
                 "HTTP/1.0 201 Created\r\n";
-        const std::string accepted =
+        inline const char* accepted =
                 "HTTP/1.0 202 Accepted\r\n";
-        const std::string no_content =
+        inline const char* no_content =
                 "HTTP/1.0 204 No Content\r\n";
-        const std::string multiple_choices =
+        inline const char* multiple_choices =
                 "HTTP/1.0 300 Multiple Choices\r\n";
-        const std::string moved_permanently =
+        inline const char* moved_permanently =
                 "HTTP/1.0 301 Moved Permanently\r\n";
-        const std::string moved_temporarily =
+        inline const char* moved_temporarily =
                 "HTTP/1.0 302 Moved Temporarily\r\n";
-        const std::string not_modified =
+        inline const char* not_modified =
                 "HTTP/1.0 304 Not Modified\r\n";
-        const std::string bad_request =
+        inline const char* bad_request =
                 "HTTP/1.0 400 Bad Request\r\n";
-        const std::string unauthorized =
+        inline const char* unauthorized =
                 "HTTP/1.0 401 Unauthorized\r\n";
-        const std::string forbidden =
+        inline const char* forbidden =
                 "HTTP/1.0 403 Forbidden\r\n";
-        const std::string not_found =
+        inline const char* not_found =
                 "HTTP/1.0 404 Not Found\r\n";
-        const std::string internal_server_error =
+        inline const char* internal_server_error =
                 "HTTP/1.0 500 Internal Server Error\r\n";
-        const std::string not_implemented =
+        inline const char* not_implemented =
                 "HTTP/1.0 501 Not Implemented\r\n";
-        const std::string bad_gateway =
+        inline const char* bad_gateway =
                 "HTTP/1.0 502 Bad Gateway\r\n";
-        const std::string service_unavailable =
+        inline const char* service_unavailable =
                 "HTTP/1.0 503 Service Unavailable\r\n";
     }
 
@@ -69,7 +69,7 @@ namespace http {
         std::variant<std::monostate, std::string, std::filesystem::path> content;
 
 
-        static std::string status_to_string(enum status_type status) {
+        static const char *status_to_string(enum status_type status) {
             switch (status) {
                 case status_type::ok:
                     return status_strings::ok;

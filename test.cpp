@@ -4,11 +4,11 @@
 int main() {
     http::server server{ 8080, 8 }; //8 threads
 
-    server.get("/hello", [ ](const http::request&) -> http::task<http::response> {
+    server.get("/hello", [ ](const http::request&){
         http::response res;
         res.status = http::status_type::ok;
         res.content.emplace<std::string>("<h1>Hello world!</h1>");
-        co_return res;
+        return res;
     });
 
     server.get("/.*\\.html", [ ](const http::request& req) -> http::task<http::response> {

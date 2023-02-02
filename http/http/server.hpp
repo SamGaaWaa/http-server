@@ -28,7 +28,7 @@ namespace http {
         using handle_type = std::variant<sync_handle, async_handle>;
         using handle_ptr = std::unique_ptr<handle_type>;
         using websocket_handle = std::function<task<void>(ws_stream)>;
-        using route_map = boost::container::flat_map<std::tuple<std::string_view, request::Method>, handle_type*>;
+        using route_map = boost::container::flat_map<std::tuple<std::string, request::Method>, handle_type*>;
 
         explicit server(short port = 80, size_t ths = 1);
 
@@ -36,7 +36,7 @@ namespace http {
         void get(const std::string&, sync_handle&&);
         void post(const std::string&, async_handle&&);
         void post(const std::string&, sync_handle&&);
-        void websocket(std::string_view, websocket_handle&&);
+        void websocket(const std::string&, websocket_handle&&);
         void listen();
         asio::io_context& get_executor();
 
@@ -44,7 +44,7 @@ namespace http {
         friend class ws_stream;
         using matcher = std::function<bool(const std::string_view&)>;
         using matcher_pair = std::tuple<matcher, request::Method, handle_ptr>;
-        using websocket_pair = std::pair<std::string_view, websocket_handle>;
+        using websocket_pair = std::pair<std::string, websocket_handle>;
         using websocket_map = std::vector<websocket_pair>;
 
         task<void> _handle_connection(tcp_socket);

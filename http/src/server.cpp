@@ -10,8 +10,10 @@
 #ifdef USE_THREAD_POOL
 #include "http/file.hpp"
 #else
+
 #include "boost/asio/stream_file.hpp"
-namespace http{
+
+namespace http {
     using stream_file = default_token::as_default_on_t<boost::asio::stream_file>;
     using file_base = boost::asio::file_base;
 }
@@ -19,6 +21,7 @@ namespace http{
 
 namespace http {
     constexpr size_t http_buffer_size = 1 << 16; //64KB
+    constexpr size_t http_request_parse_size = 4096; //4KB
 
     thread_local server::route_map server::_map{};
 
@@ -28,61 +31,60 @@ namespace http {
         };
     }
 
-    static auto timeout_ctl(asio::steady_timer &timer, size_t bytes){
+    static auto timeout_ctl(asio::steady_timer &timer, size_t bytes) {
         auto now = std::chrono::steady_clock::now();
         auto begin = timer.expiry() - std::chrono::seconds{10};
-        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(now - begin).count() ;
+        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(now - begin).count();
         auto v = static_cast<double>(bytes) / time;
-        if(v < 0.01){
+        if (v < 0.01) {
             return timer.expires_after(std::chrono::milliseconds{time / 2});
         }
         return timer.expires_after(std::chrono::seconds{10});
     }
 
 
-    task<std::optional<request>> get_request(tcp_socket *socket, const char *buffer, size_t size){
-        parser p;
+    task<std::optional<request>> get_request(tcp_socket *socket, std::pmr::memory_resource *resource) {
+        parser p{resource};
         asio::steady_timer timer{socket->get_executor()};
         timer.expires_after(std::chrono::seconds(10));
 
-        auto timeout_handle = [socket](boost::system::error_code err){
-            if(err != asio::error::operation_aborted){
+        auto timeout_handle = [socket](boost::system::error_code err) {
+            if (err != asio::error::operation_aborted) {
                 socket->close();
             }
         };
 
         timer.async_wait(timeout_handle);
-        while (true){
-            auto [err, n] = co_await socket->async_read_some(asio::buffer((void*)buffer, size));
-            if(err)
+        while (true) {
+            auto tail_buff = p.get_buffer(http_request_parse_size);
+            auto [err, n] = co_await socket->async_read_some(asio::buffer((void *) tail_buff.data(), tail_buff.size()));
+            if (err)
                 co_return std::nullopt;
 
-            if(timeout_ctl(timer, n) > 0){
+            if (timeout_ctl(timer, n) > 0) {
                 timer.async_wait(timeout_handle);
-            }else{
+            } else {
                 co_return std::nullopt;
             }
 
-            p.parse(buffer, n);
-            if(p.finish())
+            p.parse_tail(tail_buff.data(), n);
+            if (p.finish())
                 co_return p.result();
-            if(n < size)
+            if (n < tail_buff.size())
                 co_return std::nullopt;
         }
     }
 
-
-    task<response> handle_request(request){
-        co_return response{};
-    }
-
-    struct response_writer_t{
-        task<void> operator()(tcp_socket *socket, response res, const char* buffer, size_t size){
-            std::string resheaders = response::status_to_string(res.status);
+    struct response_writer_t {
+        task<void> operator()(tcp_socket* socket, response res, const char* buffer, size_t size) {
+            std::pmr::monotonic_buffer_resource pool{ (void*)buffer, size };
+            std::pmr::string resheaders{ &pool };
+            resheaders.reserve(size>>2); //16KB
+            resheaders.append(response::status_to_string(res.status));
             asio::steady_timer timer{ socket->get_executor() };
-            const auto& ex = socket->get_executor();
+            const auto &ex = socket->get_executor();
 
-            for(const auto& [k, v]: res.headers){
+            for (const auto &[k, v]: res.headers) {
                 resheaders.append(k);
                 resheaders.append(": ");
                 resheaders.append(v);
@@ -91,51 +93,62 @@ namespace http {
             resheaders.append("\r\n");
 
             timer.expires_after(std::chrono::seconds{10});
-            auto timeout_handle = [socket](boost::system::error_code err){
-                if(err != asio::error::operation_aborted){
+            auto timeout_handle = [socket](boost::system::error_code err) {
+                if (err != asio::error::operation_aborted) {
                     socket->close();
                 }
             };
             timer.async_wait(timeout_handle);
+            
+            bool together = false;
+            if (res.content.index() == 1 && std::get<1>(res.content).size() <= resheaders.capacity() - resheaders.size()) {
+                resheaders.append(std::get<1>(res.content).data(), std::get<1>(res.content).size());
+                together = true;
+            }
 
-            auto&& ret = co_await asio::async_write(*socket, asio::buffer(resheaders), default_token{});
-            if(std::get<0>(ret))
+            auto &&ret = co_await asio::async_write(*socket, asio::buffer(resheaders), default_token{});
+            if (std::get<0>(ret))
                 co_return;
 
-            if(timeout_ctl(timer, std::get<1>(ret)) > 0){
+            if (timeout_ctl(timer, std::get<1>(ret)) > 0) {
                 timer.async_wait(timeout_handle);
-            }else co_return;
+            } else co_return;
 
-            if(res.content.index() == 1){
+            std::pmr::string{&pool}.swap(resheaders);
+
+            if (res.content.index() == 1 && !together) {
                 co_await asio::async_write(*socket, asio::buffer(std::get<1>(res.content)), default_token{});
-            }else{
+            } else if(res.content.index() == 2) {
                 try {
 #ifdef USE_THREAD_POOL
                     stream_file file{ std::get<2>(res.content).string(), file_base::read_only };
 #else
-                    stream_file file{ ex, std::get<2>(res.content).string(), file_base::read_only };
+                    stream_file file{ex, std::get<2>(res.content).string(), file_base::read_only};
 
 #endif
                     while (true) {
-                        ret = co_await file.async_read_some(asio::buffer((void*)buffer, size));
+                        ret = co_await file.async_read_some(asio::buffer((void *) buffer, size));
                         if (std::get<0>(ret)) {
                             co_return;
                         }
 
-                        if(std::get<1>(ret) < size){
-                            co_await asio::async_write(*socket, asio::buffer((void*)buffer, std::get<1>(ret)), default_token{});
+                        if (std::get<1>(ret) < size) {
+                            co_await asio::async_write(*socket, asio::buffer((void *) buffer, std::get<1>(ret)),
+                                                       default_token{});
                             co_return;
                         }
-                        auto [err, n] = co_await asio::async_write(*socket, asio::buffer((void*)buffer, size), default_token{});
-                        if(err)
+                        auto [err, n] = co_await asio::async_write(*socket, asio::buffer((void *) buffer, size),
+                                                                   default_token{});
+                        if (err) {
                             co_return;
+                        }
 
-                        if(timeout_ctl(timer, std::get<1>(ret)) > 0){
+                        if (timeout_ctl(timer, std::get<1>(ret)) > 0) {
                             timer.async_wait(timeout_handle);
-                        }else co_return;
+                        } else co_return;
                     }
-                }catch(...){
-                    std::cerr<<std::get<2>(res.content).string()<<" can't open.\n";
+                } catch (...) {
+                    std::cerr << std::get<2>(res.content).string() << " can't open.\n";
                 }
             }
         }
@@ -177,12 +190,13 @@ namespace http {
         _matchers.emplace_back(pattern(path), request::Method::POST, std::make_unique<handle_type>(std::move(handle)));
     }
 
-    void server::websocket(std::string_view path, websocket_handle &&handle) {
+    void server::websocket(const std::string& path, websocket_handle &&handle) {
         _websocket_map.push_back({path, std::move(handle)});
     }
 
     server::handle_type *server::route(const request &req) {
-        auto iter = _map.find({req.url, req.method});
+        std::tuple<std::string, request::Method> target{std::string{req.url.data(), req.url.size()}, req.method};
+        auto iter = _map.find(target);
         if (iter != _map.end())
             return iter->second;
         auto match = std::find_if(_matchers.begin(), _matchers.end(), [&req](const auto &item) -> bool {
@@ -208,7 +222,7 @@ namespace http {
             while (true) {
                 tcp_socket socket{_ths > 1 ? *_pool.get_executor() : _context};
                 auto [err] = co_await _acceptor.async_accept(socket, default_token{});
-                if(err)
+                if (err)
                     continue;
                 const auto &ex = socket.get_executor();
                 asio::co_spawn(ex, _handle_connection(std::move(socket)), asio::detached);
@@ -223,18 +237,21 @@ namespace http {
 
     task<void> server::_handle_connection(tcp_socket socket) {
         std::array<char, http_buffer_size> buffer{};
+        std::pmr::monotonic_buffer_resource pool{buffer.data(), buffer.size()};
+
         std::optional<request> req_op;
         const auto &ex = socket.get_executor();
 
-        req_op = co_await get_request(&socket, buffer.data(), buffer.size());
+        req_op = co_await get_request(&socket, &pool);
         if (!req_op.has_value())
             co_return;
+
         if (req_op->is_upgrade()) {
             static constexpr auto comp = [](const websocket_pair &x, const websocket_pair &y) {
                 return x.first < y.first;
             };
-            auto handle = std::lower_bound(_websocket_map.begin(), _websocket_map.end(),
-                                           websocket_pair{req_op->url, {}}, comp);
+            websocket_pair target{std::string{req_op->url.data(), req_op->url.size()}, {}};
+            auto handle = std::lower_bound(_websocket_map.begin(), _websocket_map.end(), target, comp);
             if (handle == _websocket_map.end() || handle->first != req_op->url)
                 co_return;
             ws_stream::ws_stream_t stream{std::move(socket)};
@@ -254,8 +271,9 @@ namespace http {
             if (handle->index() == 0) {
                 auto res = std::get<0>(*handle)(*req_op);
                 if (res.status == status_type::ok) {
-                    _map.insert({std::tuple{req_op->url, req_op->method}, handle});
+                    _map.insert({std::tuple{std::string{req_op->url.data(), req_op->url.size()}, req_op->method}, handle});
                 }
+                req_op.reset();
                 co_await response_writer_t{}(&socket, std::move(res), buffer.data(), buffer.size());
                 co_return;
             }
@@ -263,7 +281,8 @@ namespace http {
             if (std::get<0>(ret))
                 co_return;
             if (std::get<1>(ret).status == status_type::ok)
-                _map.insert({std::tuple{req_op->url, req_op->method}, handle});
+                _map.insert({std::tuple{std::string{req_op->url.data(), req_op->url.size()}, req_op->method}, handle});
+            req_op.reset();
             co_await response_writer_t{}(&socket, std::move(std::get<1>(ret)), buffer.data(), buffer.size());
         } else {
             try {
@@ -272,7 +291,7 @@ namespace http {
                     res_op = std::get<0>(*handle)(*req_op);
                 } else res_op = co_await (std::get<1>(*handle))(*req_op);
                 if ((*res_op).status == status_type::ok)
-                    _map.insert({std::tuple{req_op->url, req_op->method}, handle});
+                    _map.insert({std::tuple{std::string{req_op->url.data(), req_op->url.size()}, req_op->method}, handle});
                 co_await response_writer_t{}(&socket, std::move(*res_op), buffer.data(), buffer.size());
             }
             catch (...) {

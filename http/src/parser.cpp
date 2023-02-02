@@ -2,7 +2,7 @@
 
 namespace http{
 
-    parser::parser() noexcept{
+    parser::parser(std::pmr::memory_resource *resource) noexcept: _req{resource}{
         http_parser_init(&_parser, HTTP_REQUEST);
         _parser.data = this;
         _settings.on_url = on_url;
@@ -13,10 +13,9 @@ namespace http{
         _settings.on_message_complete = on_message_complete;
     }
 
-    int parser::parse(const char *at, size_t length) {
-        _req._raw_data.append(at, length);
-        return http_parser_execute(&_parser, &_settings, (&_req._raw_data.back()) + 1 - length, length);
-
+    int parser::parse_tail(const char *at, size_t length) noexcept {
+        _req._raw_data.resize(at + length - _req.data());
+        return http_parser_execute(&_parser, &_settings, at, length);
     }
 
     bool parser::finish() const noexcept {
@@ -25,6 +24,14 @@ namespace http{
 
     request parser::result() noexcept {
         return std::move(_req);
+    }
+
+
+    std::string_view parser::get_buffer(size_t size) {
+        auto &data = _req._raw_data;
+        auto old_size = data.size();
+        data.resize(old_size + size);
+        return {data.data() + old_size, size};
     }
 
 }

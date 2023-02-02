@@ -5,13 +5,16 @@
 #include "http/request.hpp"
 
 #include <optional>
+#include <concepts>
+#include <string_view>
 
 namespace http{
     struct parser{
-        parser()noexcept;
-        int parse(const char *, size_t);
+        parser(std::pmr::memory_resource *)noexcept;
+        int parse_tail(const char *, size_t)noexcept;
         request result()noexcept;
         [[nodiscard]] bool finish()const noexcept;
+        std::string_view get_buffer(size_t);
     private:
         http_parser _parser{};
         request _req;

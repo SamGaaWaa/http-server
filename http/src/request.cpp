@@ -38,4 +38,15 @@ namespace http{
     bool request::is_upgrade() const noexcept {
         return _upgrade;
     }
+
+    request::request(allocator_type alloc)noexcept: _raw_data{alloc}, _headers{alloc}{}
+
+    request::request(request &&other, allocator_type alloc) noexcept: _raw_data{std::move(other._raw_data), alloc},
+                                                                        _headers{std::move(other._headers), alloc}{}
+
+    request &request::operator=(request&& other)noexcept {
+        _raw_data = std::move(other._raw_data);
+        _headers = std::move(other._headers);
+        return *this;
+    }
 }
