@@ -44,8 +44,9 @@ namespace http {
 
 
     task<std::optional<request>> get_request(tcp_socket *socket, std::pmr::memory_resource *resource) {
-        parser p{resource};
-        asio::steady_timer timer{socket->get_executor()};
+        parser p{ resource };
+        p.reserve(http_buffer_size / 2 + http_buffer_size / 4);
+        asio::steady_timer timer{ socket->get_executor() };
         timer.expires_after(std::chrono::seconds(10));
 
         auto timeout_handle = [socket](boost::system::error_code err) {

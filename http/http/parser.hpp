@@ -15,6 +15,7 @@ namespace http{
         request result()noexcept;
         [[nodiscard]] bool finish()const noexcept;
         std::string_view get_buffer(size_t);
+        void reserve(size_t);
     private:
         http_parser _parser{};
         request _req;

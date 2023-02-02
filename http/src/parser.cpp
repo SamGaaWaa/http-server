@@ -34,4 +34,7 @@ namespace http{
         return {data.data() + old_size, size};
     }
 
+    void parser::reserve(size_t size){
+        _req._raw_data.reserve(size);
+    }
 }
